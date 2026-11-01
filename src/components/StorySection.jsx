@@ -36,7 +36,7 @@ export default function StorySection() {
           </p>
 
           <div className="signature">
-            {weddingConfig.groomName} <span className="sig-heart">♡</span> {weddingConfig.brideName}
+            {weddingConfig.brideName} <span className="sig-heart">♡</span> {weddingConfig.groomName}
           </div>
         </div>
 

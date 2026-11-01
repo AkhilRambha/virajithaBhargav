@@ -35,6 +35,10 @@ export default function EventsSection() {
 
             <div className="event-details-list">
               <div className="event-meta">
+                <span className="meta-icon">📅</span>
+                <span className="meta-text">{event.date}</span>
+              </div>
+              <div className="event-meta">
                 <span className="meta-icon">◷</span>
                 <span className="meta-text">{event.time}</span>
               </div>

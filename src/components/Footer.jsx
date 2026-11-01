@@ -11,13 +11,13 @@ export default function Footer() {
     <footer className="footer">
       <div className="footer-content">
         <div className="footer-monogram" aria-hidden="true">
-          <span className="monogram-letter">{weddingConfig.groomName[0]}</span>
-          <span className="monogram-heart">♡</span>
           <span className="monogram-letter">{weddingConfig.brideName[0]}</span>
+          <span className="monogram-heart">♡</span>
+          <span className="monogram-letter">B</span>
         </div>
 
         <h3 className="footer-names">
-          {weddingConfig.groomName} <span>&amp;</span> {weddingConfig.brideName}
+          {weddingConfig.brideName} <span>&amp;</span> {weddingConfig.groomName}
         </h3>
 
         <p className="footer-blessing">

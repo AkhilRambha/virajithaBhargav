@@ -1,5 +1,6 @@
 import React from 'react';
 import { weddingConfig } from '../weddingConfig';
+import ScratchCardDate from './ScratchCardDate';
 
 export default function HeroSection({ countdown }) {
   const scrollToStory = (e) => {
@@ -32,9 +33,9 @@ export default function HeroSection({ countdown }) {
         <p className="invitation-line">We joyfully invite you to celebrate the union of</p>
 
         <h1 className="hero-title">
-          <span id="groomName">{weddingConfig.groomName}</span>
-          <span className="ampersand">&amp;</span>
           <span id="brideName">{weddingConfig.brideName}</span>
+          <span className="ampersand">&amp;</span>
+          <span id="groomName">{weddingConfig.groomName}</span>
         </h1>
 
         <div className="ornament">
@@ -45,15 +46,8 @@ export default function HeroSection({ countdown }) {
           <span className="ornament-line"></span>
         </div>
 
-        <div className="hero-meta-badge">
-          <p className="hero-date" id="heroDate">
-            {weddingConfig.weddingDateText}
-          </p>
-          <span className="meta-separator">|</span>
-          <p className="hero-venue" id="heroVenue">
-            {weddingConfig.venueName}
-          </p>
-        </div>
+        {/* Interactive Royal Scratch Card to Reveal the Wedding Date */}
+        <ScratchCardDate />
 
         {/* Ultra-luxury glassmorphism countdown */}
         <div

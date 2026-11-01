@@ -33,7 +33,7 @@ export default function RsvpSection() {
     }
 
     const message = [
-      `Wedding RSVP: ${weddingConfig.groomName} & ${weddingConfig.brideName}`,
+      `Wedding RSVP: ${weddingConfig.brideName} & ${weddingConfig.groomName}`,
       '',
       `Guest name: ${trimmedName}`,
       `Number of guests: ${guestCount}`,
@@ -71,7 +71,7 @@ export default function RsvpSection() {
         </h2>
 
         <p className="rsvp-subtitle">
-          Kindly RSVP by 1st December 2026 so we can warmly prepare for your arrival.
+          Kindly RSVP by 10th December 2026 so we can warmly prepare for your arrival.
         </p>
 
         <div className="rsvp-card-wrapper">

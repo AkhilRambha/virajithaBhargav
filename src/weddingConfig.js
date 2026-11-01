@@ -1,38 +1,39 @@
 /*
   WEDDING WEBSITE CONFIGURATION
-  Edit these values to personalize your website.
+  Personalized for Virajitha & Sai Bhargav
 */
 
 export const weddingConfig = {
-  groomName: "Akhil",
-  brideName: "Sneha",
-  monogram: "A & S",
+  brideName: "Virajitha",
+  groomName: "Sai Bhargav",
+  coupleDisplay: "Virajitha & Sai Bhargav",
+  monogram: "V & B",
 
-  // Format: YYYY-MM-DDTHH:mm:ss
-  weddingDate: "2026-12-12T10:00:00",
+  // Format: YYYY-MM-DDTHH:mm:ss (Wedding ceremony: 18 Dec 2026 at 6:00 PM)
+  weddingDate: "2026-12-18T18:00:00",
 
-  weddingDateText: "12 December 2026",
-  weddingShortDate: "12.12.2026",
-  weddingTime: "10:00 AM onwards",
+  weddingDateText: "18 December 2026",
+  weddingShortDate: "18.12.2026",
+  weddingDay: "Friday",
+  weddingTime: "6:00 PM onwards",
 
   venueName: "Sri Venkateswara Kalyanamandapam",
-  venueAddress: "Vijayawada, Andhra Pradesh, India",
+  venueAddress: "Sri Venkateswara Kalyanamandapam, Korukonda Road, Andhra Pradesh, India",
   attire: "Traditional / Festive Elegance",
 
   // Google Maps search or place URL
   directionsUrl:
     "https://www.google.com/maps/search/?api=1&query=" +
-    encodeURIComponent("Sri Venkateswara Kalyanamandapam, Vijayawada"),
+    encodeURIComponent("Sri Venkateswara Kalyanamandapam, Korukonda"),
 
   mapEmbedUrl:
     "https://maps.google.com/maps?q=" +
-    encodeURIComponent("Sri Venkateswara Kalyanamandapam, Vijayawada") +
+    encodeURIComponent("Sri Venkateswara Kalyanamandapam, Korukonda") +
     "&z=14&output=embed",
 
   /*
     WhatsApp number that should receive RSVPs.
     Include country code, digits only.
-    Example format for India: 919876543210
   */
   whatsappNumber: "917285939212"
 };
@@ -95,9 +96,10 @@ export const weddingEventsData = [
     label: "THE PRE-WEDDING",
     title: "Haldi Ceremony",
     icon: "✦",
-    description: "A joyful morning bathed in turmeric, bright smiles, family laughter and golden blessings.",
-    time: "10:00 AM onwards",
-    venue: "Family Residence",
+    date: "17 December 2026",
+    time: "5:00 PM onwards",
+    venue: "Home Residence",
+    description: "A joyful evening bathed in turmeric, bright smiles, family laughter, and golden blessings.",
     featured: false
   },
   {
@@ -106,30 +108,34 @@ export const weddingEventsData = [
     label: "THE MAIN CEREMONY",
     title: "Wedding Ceremony",
     icon: "❦",
-    description: "Two souls, two families, and timeless vows woven together under the sacred wedding mandap.",
-    time: "10:00 AM onwards",
+    date: "18 December 2026",
+    time: "6:00 PM onwards",
     venue: "Sri Venkateswara Kalyanamandapam",
+    description: "Two souls, two families, and timeless vows woven together under the sacred wedding mandap.",
     featured: true
   },
   {
     id: 3,
     number: "03",
-    label: "LET'S CELEBRATE",
+    label: "THE RECEPTION",
     title: "Reception",
     icon: "✧",
-    description: "An enchanting evening of celebration, delicious feast, music, heartfelt toasts and dancing.",
-    time: "6:00 PM onwards",
-    venue: "Sri Venkateswara Royal Hall",
+    date: "20 December 2026",
+    time: "7:00 PM onwards",
+    venue: "Korukonda",
+    description: "An enchanting evening of celebration, delicious feast, music, heartfelt toasts, and dancing.",
     featured: false
   }
 ];
 
-// Helper to generate Google Calendar Event URL
+// Helper to generate Google Calendar Event URL (18 Dec 2026 6:00 PM IST is 12:30 UTC)
 export function getGoogleCalendarUrl() {
-  const title = encodeURIComponent(`${weddingConfig.groomName} & ${weddingConfig.brideName}'s Wedding`);
-  const details = encodeURIComponent(`We joyfully invite you to celebrate our wedding ceremony at ${weddingConfig.venueName}.`);
+  const title = encodeURIComponent(`${weddingConfig.brideName} & ${weddingConfig.groomName}'s Wedding`);
+  const details = encodeURIComponent(
+    `We joyfully invite you to celebrate the wedding ceremony of ${weddingConfig.brideName} & ${weddingConfig.groomName} at ${weddingConfig.venueName}.`
+  );
   const location = encodeURIComponent(`${weddingConfig.venueName}, ${weddingConfig.venueAddress}`);
-  // Date format: YYYYMMDDTHHmmssZ
-  const dates = "20261212T043000Z/20261212T163000Z";
+  // Date format: YYYYMMDDTHHmmssZ (18 Dec 2026 18:00 IST = 12:30 UTC)
+  const dates = "20261218T123000Z/20261218T183000Z";
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
 }
