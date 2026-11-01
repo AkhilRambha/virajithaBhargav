@@ -1,53 +1,40 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, memo } from 'react';
 import { weddingConfig } from '../weddingConfig';
 
-export default function ScratchCardDate() {
+function ScratchCardDate() {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
-  const [isScratching, setIsScratching] = useState(false);
+  const isDrawingRef = useRef(false);
+  const lastPointRef = useRef(null);
+  const hasScratchedRef = useRef(false);
+  const lastCheckTimeRef = useRef(0);
+  const isRevealedRef = useRef(false);
+
+  // States
   const [isRevealed, setIsRevealed] = useState(false);
-  const [scratchPercent, setScratchPercent] = useState(0);
+  const [isFading, setIsFading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // Initialize canvas with gold foil surface
-  const initCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
-
-    const rect = container.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const width = Math.floor(rect.width);
-    const height = Math.floor(rect.height);
-
-    if (width === 0 || height === 0) return;
-
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    ctx.scale(dpr, dpr);
-
-    // Reset composite operation to draw fresh foil
+  // Paint the golden foil texture on canvas
+  const drawFoil = useCallback((ctx, width, height) => {
     ctx.globalCompositeOperation = 'source-over';
 
-    // 1. Shimmering Gold Foil Gradient
+    // 1. Multi-stop Metallic Gold Gradient
     const goldGrad = ctx.createLinearGradient(0, 0, width, height);
     goldGrad.addColorStop(0, '#cda250');
-    goldGrad.addColorStop(0.2, '#f5e2a8');
-    goldGrad.addColorStop(0.4, '#b88934');
-    goldGrad.addColorStop(0.65, '#fdeeb3');
-    goldGrad.addColorStop(0.85, '#9d6f22');
+    goldGrad.addColorStop(0.18, '#f7e3ad');
+    goldGrad.addColorStop(0.38, '#b88934');
+    goldGrad.addColorStop(0.58, '#faebbd');
+    goldGrad.addColorStop(0.8, '#9e7025');
     goldGrad.addColorStop(1, '#dfba68');
     ctx.fillStyle = goldGrad;
     ctx.fillRect(0, 0, width, height);
 
-    // 2. Subtle diamond lattice watermark on foil
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-    ctx.lineWidth = 1;
-    const spacing = 18;
+    // 2. Diamond Lattice Watermark
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+    ctx.lineWidth = 1.5;
+    const spacing = 22;
     for (let x = -height; x < width + height; x += spacing) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
@@ -59,96 +46,78 @@ export default function ScratchCardDate() {
       ctx.lineTo(x + height, 0);
       ctx.stroke();
     }
+    ctx.restore();
 
-    // 3. Inner fine gold border
-    ctx.strokeStyle = 'rgba(110, 75, 18, 0.45)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(6, 6, width - 12, height - 12);
+    // 3. Ornate Double Gold Borders
+    ctx.save();
+    ctx.strokeStyle = 'rgba(90, 60, 15, 0.45)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(8, 8, width - 16, height - 16);
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(9, 9, width - 18, height - 18);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(13, 13, width - 26, height - 26);
+    ctx.restore();
 
-    // 4. Gold Foil Label Text & Icon
-    ctx.fillStyle = '#4a320c';
+    // 4. Elegant Calligraphy & Labels
+    ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Crown / Sparkle icon
-    ctx.font = 'bold 18px "Cormorant Garamond", Georgia, serif';
-    ctx.fillText('✦  ❦  ✦', width / 2, height / 2 - 24);
+    // Royal Crown / Flourish
+    ctx.fillStyle = '#422c09';
+    const scaleFactor = Math.min(width / 380, 1);
+    const fontSizeFlourish = Math.max(16, Math.round(20 * scaleFactor));
+    ctx.font = `bold ${fontSizeFlourish}px "Cormorant Garamond", Georgia, serif`;
+    ctx.fillText('✦   ❦   ✦', width / 2, height / 2 - 28 * scaleFactor);
 
-    // Main scratch prompt
-    ctx.font = '700 13px "DM Sans", sans-serif';
-    ctx.letterSpacing = '2px';
+    // Main Title
+    const fontSizeTitle = Math.max(12, Math.round(14 * scaleFactor));
+    ctx.font = `700 ${fontSizeTitle}px "DM Sans", -apple-system, sans-serif`;
+    ctx.fillStyle = '#2f1f06';
     ctx.fillText('SCRATCH TO REVEAL DATE', width / 2, height / 2);
 
-    // Sub prompt
-    ctx.font = 'italic 11px "Cormorant Garamond", Georgia, serif';
-    ctx.fillStyle = '#6e4c19';
-    ctx.fillText('Rub with your finger or mouse', width / 2, height / 2 + 22);
-
-    setIsRevealed(false);
-    setScratchPercent(0);
-    setShowConfetti(false);
+    // Subtitle instruction
+    const fontSizeSub = Math.max(10, Math.round(12 * scaleFactor));
+    ctx.font = `italic ${fontSizeSub}px "Cormorant Garamond", Georgia, serif`;
+    ctx.fillStyle = '#5a3d0f';
+    ctx.fillText('Rub with your finger or mouse', width / 2, height / 2 + 26 * scaleFactor);
+    ctx.restore();
   }, []);
 
-  useEffect(() => {
-    initCanvas();
-    const handleResize = () => {
-      if (!isRevealed) {
-        initCanvas();
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [initCanvas, isRevealed]);
+  // Complete reveal: stays permanently unveiled until website reload
+  const revealComplete = useCallback(() => {
+    if (isRevealedRef.current) return;
+    isRevealedRef.current = true;
+    setIsFading(true);
+    setShowConfetti(true);
 
-  // Scratch stroke function
-  const scratch = (clientX, clientY) => {
+    // Gracefully fade out canvas, then remove from DOM
+    setTimeout(() => {
+      setIsRevealed(true);
+      setIsFading(false);
+    }, 380);
+
+    setTimeout(() => {
+      setShowConfetti(false);
+    }, 3800);
+  }, []);
+
+  // Check how much has been scratched (efficiently throttled)
+  const checkScratchPercentage = useCallback(() => {
+    if (isRevealedRef.current) return;
     const canvas = canvasRef.current;
-    if (!canvas || isRevealed) return;
+    if (!canvas) return;
 
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-
-    const x = (clientX - rect.left) * dpr;
-    const y = (clientY - rect.top) * dpr;
-
-    // Erase foil layer
-    ctx.globalCompositeOperation = 'destination-out';
-
-    // Radial gradient for smooth soft eraser edge
-    const radius = 24 * dpr;
-    const eraseGrad = ctx.createRadialGradient(x, y, radius * 0.4, x, y, radius);
-    eraseGrad.addColorStop(0, 'rgba(0,0,0,1)');
-    eraseGrad.addColorStop(1, 'rgba(0,0,0,0)');
-
-    ctx.fillStyle = eraseGrad;
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Check completion periodically
-    checkScratchCompletion();
-  };
-
-  // Sample canvas pixels to measure scratch percentage
-  const checkScratchCompletion = () => {
-    const canvas = canvasRef.current;
-    if (!canvas || isRevealed) return;
-
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const dpr = window.devicePixelRatio || 1;
     const width = canvas.width;
     const height = canvas.height;
 
-    // Sample a 20x20 grid (400 points) for quick performance
-    const cols = 20;
-    const rows = 12;
+    // Sample an optimized 12x8 grid (96 points) across the canvas
+    const cols = 12;
+    const rows = 8;
+    const totalSamples = cols * rows;
     let transparentCount = 0;
-    const totalSamplePoints = cols * rows;
 
     const stepX = Math.floor(width / cols);
     const stepY = Math.floor(height / rows);
@@ -163,78 +132,186 @@ export default function ScratchCardDate() {
           const sampleY = Math.min(r * stepY + Math.floor(stepY / 2), height - 1);
           const alphaIndex = (sampleY * width + sampleX) * 4 + 3;
 
-          if (data[alphaIndex] < 64) {
+          if (data[alphaIndex] < 80) {
             transparentCount++;
           }
         }
       }
 
-      const percent = Math.round((transparentCount / totalSamplePoints) * 100);
-      setScratchPercent(percent);
+      const percent = (transparentCount / totalSamples) * 100;
 
-      // Auto-reveal once user scratches 40%
-      if (percent >= 40) {
+      // Auto reveal once ~20% is scratched
+      if (percent >= 20) {
         revealComplete();
       }
     } catch {
       // Fallback
     }
-  };
+  }, [revealComplete]);
 
-  const revealComplete = () => {
-    setIsRevealed(true);
-    setShowConfetti(true);
-
+  // Coordinates helper
+  const getCanvasCoords = useCallback((clientX, clientY) => {
     const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
+    };
+  }, []);
+
+  // Silky smooth scratch stroke with continuous interpolation
+  const scratchTo = useCallback((clientX, clientY) => {
+    if (isRevealedRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const coords = getCanvasCoords(clientX, clientY);
+    if (!coords) return;
+    const { x: currX, y: currY } = coords;
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+
+    // Generous eraser radius (~30-34 CSS pixels)
+    const rect = canvas.getBoundingClientRect();
+    const scaleFactor = canvas.width / (rect.width || 1);
+    const brushRadius = Math.round(30 * scaleFactor);
+
+    ctx.lineWidth = brushRadius * 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#000000';
+    ctx.fillStyle = '#000000';
+
+    if (lastPointRef.current) {
+      ctx.beginPath();
+      ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
+      ctx.lineTo(currX, currY);
+      ctx.stroke();
     }
 
-    setTimeout(() => {
-      setShowConfetti(false);
-    }, 3500);
-  };
+    // Always draw round circle at current point for smooth endpoints
+    ctx.beginPath();
+    ctx.arc(currX, currY, brushRadius, 0, Math.PI * 2);
+    ctx.fill();
 
-  // Mouse Handlers
-  const handleMouseDown = (e) => {
-    setIsScratching(true);
-    scratch(e.clientX, e.clientY);
-  };
+    ctx.restore();
+    lastPointRef.current = { x: currX, y: currY };
+    hasScratchedRef.current = true;
 
-  const handleMouseMove = (e) => {
-    if (!isScratching) return;
-    scratch(e.clientX, e.clientY);
-  };
+    // Throttle percentage check to maintain 60-120 FPS buttery smooth motion
+    const now = performance.now();
+    if (now - lastCheckTimeRef.current > 180) {
+      lastCheckTimeRef.current = now;
+      checkScratchPercentage();
+    }
+  }, [getCanvasCoords, checkScratchPercentage]);
 
-  const handleMouseUp = () => {
-    setIsScratching(false);
-  };
+  // Unified start/move/end handlers
+  const handleStart = useCallback((clientX, clientY) => {
+    if (isRevealedRef.current) return;
+    isDrawingRef.current = true;
+    lastPointRef.current = null;
+    scratchTo(clientX, clientY);
+  }, [scratchTo]);
 
-  // Touch Handlers (with touch-action none prevention)
-  const handleTouchStart = (e) => {
-    if (e.cancelable) e.preventDefault();
-    setIsScratching(true);
-    const touch = e.touches[0];
-    if (touch) scratch(touch.clientX, touch.clientY);
-  };
+  const handleMove = useCallback((clientX, clientY) => {
+    if (!isDrawingRef.current || isRevealedRef.current) return;
+    scratchTo(clientX, clientY);
+  }, [scratchTo]);
 
-  const handleTouchMove = (e) => {
-    if (e.cancelable) e.preventDefault();
-    if (!isScratching) return;
-    const touch = e.touches[0];
-    if (touch) scratch(touch.clientX, touch.clientY);
-  };
+  const handleEnd = useCallback(() => {
+    if (!isDrawingRef.current) return;
+    isDrawingRef.current = false;
+    lastPointRef.current = null;
+    // Always check percentage when user finishes a stroke
+    checkScratchPercentage();
+  }, [checkScratchPercentage]);
 
-  const handleTouchEnd = () => {
-    setIsScratching(false);
-  };
+  // Initialize canvas buffer
+  const initCanvas = useCallback(() => {
+    if (isRevealedRef.current) return;
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    const rect = container.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const width = Math.floor(rect.width);
+    const height = Math.floor(rect.height);
+
+    if (width === 0 || height === 0) return;
+
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    drawFoil(ctx, canvas.width, canvas.height);
+  }, [drawFoil]);
+
+  // Mount effect & non-passive native touch listeners for mobile
+  useEffect(() => {
+    initCanvas();
+
+    const handleResize = () => {
+      // Do not wipe out canvas if user already began scratching or if revealed
+      if (isRevealedRef.current || hasScratchedRef.current) return;
+      initCanvas();
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    const canvas = canvasRef.current;
+    if (canvas && !isRevealed) {
+      // Native non-passive listeners prevent mobile screen scroll during scratching
+      const onTouchStart = (e) => {
+        if (e.cancelable) e.preventDefault();
+        const touch = e.touches[0];
+        if (touch) handleStart(touch.clientX, touch.clientY);
+      };
+
+      const onTouchMove = (e) => {
+        if (e.cancelable) e.preventDefault();
+        const touch = e.touches[0];
+        if (touch) handleMove(touch.clientX, touch.clientY);
+      };
+
+      const onTouchEnd = (e) => {
+        if (e.cancelable) e.preventDefault();
+        handleEnd();
+      };
+
+      canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+      canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+      canvas.addEventListener('touchcancel', onTouchEnd, { passive: false });
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        canvas.removeEventListener('touchstart', onTouchStart);
+        canvas.removeEventListener('touchmove', onTouchMove);
+        canvas.removeEventListener('touchend', onTouchEnd);
+        canvas.removeEventListener('touchcancel', onTouchEnd);
+      };
+    }
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, [initCanvas, handleStart, handleMove, handleEnd, isRevealed]);
 
   return (
     <div className="scratch-card-wrapper">
       <div className="scratch-card-eyebrow">
         <span className="card-sparkle">✨</span>
-        <span>A SPECIAL REVEAL FOR OUR GUESTS</span>
+        <span>{isRevealed ? 'OFFICIALLY REVEALED' : 'SCRATCH WITH FINGER OR MOUSE'}</span>
         <span className="card-sparkle">✨</span>
       </div>
 
@@ -246,7 +323,7 @@ export default function ScratchCardDate() {
         <div className="scratch-card-secret">
           <div className="secret-inner-frame">
             <span className="secret-crest">✦  ❦  ✦</span>
-            <p className="secret-subtitle">THE AUSPICIOUS UNION OF OUR HEARTS</p>
+            <p className="secret-subtitle">AUSPICIOUS WEDDING DATE</p>
 
             <h2 className="secret-date-title">{weddingConfig.weddingDateText}</h2>
 
@@ -268,33 +345,54 @@ export default function ScratchCardDate() {
           </div>
         </div>
 
-        {/* TOP LAYER: Golden Foil Scratch Canvas */}
-        <canvas
-          ref={canvasRef}
-          className={`scratch-card-canvas ${isRevealed ? 'canvas-hidden' : ''}`}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          aria-label="Scratch card to reveal wedding date"
-        />
+        {/* TOP LAYER: Golden Foil Scratch Canvas (stays removed once revealed) */}
+        {!isRevealed && (
+          <canvas
+            ref={canvasRef}
+            className={`scratch-card-canvas ${isFading ? 'canvas-hidden' : ''}`}
+            onPointerDown={(e) => {
+              if (e.pointerType === 'mouse' || e.pointerType === 'pen') {
+                try {
+                  e.target.setPointerCapture(e.pointerId);
+                } catch {}
+                handleStart(e.clientX, e.clientY);
+              }
+            }}
+            onPointerMove={(e) => {
+              if (e.pointerType === 'mouse' || e.pointerType === 'pen') {
+                handleMove(e.clientX, e.clientY);
+              }
+            }}
+            onPointerUp={(e) => {
+              if (e.pointerType === 'mouse' || e.pointerType === 'pen') {
+                try {
+                  e.target.releasePointerCapture(e.pointerId);
+                } catch {}
+                handleEnd();
+              }
+            }}
+            onPointerCancel={(e) => {
+              if (e.pointerType === 'mouse' || e.pointerType === 'pen') {
+                handleEnd();
+              }
+            }}
+            aria-label="Scratch card to reveal wedding date"
+          />
+        )}
 
-        {/* Confetti celebration burst upon full scratch */}
+        {/* Confetti celebration burst upon reveal */}
         {showConfetti && (
           <div className="scratch-confetti-layer" aria-hidden="true">
-            {[...Array(24)].map((_, i) => (
+            {[...Array(26)].map((_, i) => (
               <span
                 key={i}
                 className="confetti-piece"
                 style={{
-                  '--x': `${(i % 6) * 30 - 75}px`,
-                  '--y': `${-40 - Math.random() * 80}px`,
+                  '--x': `${(i % 7) * 28 - 84}px`,
+                  '--y': `${-45 - Math.random() * 85}px`,
                   '--rot': `${Math.random() * 360}deg`,
-                  '--color': i % 3 === 0 ? '#ffd700' : i % 3 === 1 ? '#e8b958' : '#fff5d0',
-                  animationDelay: `${(i % 5) * 0.08}s`
+                  '--color': i % 3 === 0 ? '#ffd700' : i % 3 === 1 ? '#f5e2a8' : '#e0b85c',
+                  animationDelay: `${(i % 6) * 0.07}s`
                 }}
               ></span>
             ))}
@@ -302,9 +400,9 @@ export default function ScratchCardDate() {
         )}
       </div>
 
-      {/* Helper Bar */}
-      <div className="scratch-card-actions">
-        {!isRevealed ? (
+      {/* Helper Reveal Button (Permanently hidden once revealed) */}
+      {!isRevealed && (
+        <div className="scratch-card-actions">
           <button
             type="button"
             className="scratch-reveal-btn"
@@ -312,16 +410,10 @@ export default function ScratchCardDate() {
           >
             <span>✨</span> Tap to Reveal Instantly
           </button>
-        ) : (
-          <button
-            type="button"
-            className="scratch-again-btn"
-            onClick={initCanvas}
-          >
-            <span>↺</span> Scratch Again
-          </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
+
+export default memo(ScratchCardDate);
