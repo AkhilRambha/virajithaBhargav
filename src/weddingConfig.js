@@ -19,7 +19,7 @@ export const weddingConfig = {
 
   venueName: "Sri Veera Venkata Satyanarayana Function Hall",
   venueAddress: "Sree Siddhartha College Rd, opposite Siddhartha College, Angara, Andhra Pradesh 533307",
-  attire: "Traditional / Festive Elegance",
+  // attire: "Traditional / Festive Elegance",
 
   // Google Maps search or place URL
   directionsUrl:
@@ -110,18 +110,6 @@ export const weddingEventsData = [
     venue: "Sri Veera Venkata Satyanarayana Function Hall",
     description: "Two souls, two families, and timeless vows woven together under the sacred wedding mandap.",
     featured: true
-  },
-  {
-    id: 3,
-    number: "03",
-    label: "THE RECEPTION",
-    title: "Reception",
-    icon: "✧",
-    date: "20 December 2026",
-    time: "7:00 PM onwards",
-    venue: "Korukonda",
-    description: "An enchanting evening of celebration, delicious feast, music, heartfelt toasts, and dancing.",
-    featured: false
   }
 ];
 
